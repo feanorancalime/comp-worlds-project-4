@@ -156,7 +156,7 @@ public class Peer {
 
 			public void run()  {
 				while (!isInterrupted()) {
-					try (Socket socket = serverSocket.accept()) {
+					try(Socket socket = serverSocket.accept()) {
 						processConnection(socket);
 					} catch (IOException e) {
 					}
