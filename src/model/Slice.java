@@ -9,10 +9,15 @@ import java.util.Set;
 public class Slice {
     private static final double CELL_ON_CHANCE = 0.60;
 
+    /**The version (iteration) number of this Slice**/
     int version = -1;
+    /**The number (index) of this slice.**/
     int number = -1;
+    /**The cells this slice contains**/
     public int[][] cells = new int[1024][1024]; //-1 = uninitialized; 0 = off; 1+ = on, for num iterations;
+    /**The adjacency values on which we should change an empty cell to a filled cell**/
     static Set<Integer> birth = new HashSet<Integer>();
+    /**The adjacency values on which we should keep an "on" cell "on"**/
     static Set<Integer> stay_alive = new HashSet<Integer>();
     static {
         //defaults
@@ -26,12 +31,15 @@ public class Slice {
         stay_alive.add(8);
     }
 
+    /**Construct with defaults**/
     private Slice() {};
 
+    /**Construct with version 0 and random cells**/
     public Slice(int number) {
         this(number,0);
     }
 
+    /**Construct with specified version number and random cells.**/
     public Slice(int number, int version) {
         this.number = number;
         this.version = version;
@@ -42,12 +50,19 @@ public class Slice {
                 cells[i][j] = (Math.random()<CELL_ON_CHANCE?1:0);
     }
 
+    /**Copy constructor**/
     public Slice(Slice other) {
         this.version = other.version;
         this.number = other.number;
         this.cells = other.cells.clone();
     }
 
+    /**
+     * Updates the slice. Does not modify original slice..
+     * @param below the slice "below" this one
+     * @param above the slice "above" this one
+     * @return The next version of this slice.
+     */
     public Slice updateToCopy(Slice below, Slice above) {
         Slice slice = new Slice();
         slice.version = this.version + 1;
@@ -68,6 +83,14 @@ public class Slice {
         return slice;
     }
 
+    /**
+     * Gets the adjacency count for a cell
+     * @param x the x index of the cell
+     * @param y the y index of the cell
+     * @param below the slice "below" this one
+     * @param above the slice "above" this one
+     * @return the number of adjacent cells
+     */
     public int getAdjacent(int x , int y, Slice below, Slice above) {
         int x_prev = (x+cells.length-1) % cells.length;
         int x_next = (x+1) % cells.length;
@@ -94,7 +117,7 @@ public class Slice {
         if(this.cells[x_prev][y_next]>0)   adjacent++;
 
         if(this.cells[x][y_prev]>0)        adjacent++;
-        //if(this.cells[x][y]>0)             adjacent++;
+        //if(this.cells[x][y]>0)             adjacent++; //this is the current cell, does not count as adjacent
         if(this.cells[x][y_next]>0)        adjacent++;
 
         if(this.cells[x_next][y_prev]>0)   adjacent++;
