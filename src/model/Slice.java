@@ -11,7 +11,7 @@ public class Slice {
 
     int version = -1;
     int number = -1;
-    int[][] cells = new int[1024][1024]; //-1 = uninitialized; 0 = off; 1+ = on, for num iterations;
+    public int[][] cells = new int[1024][1024]; //-1 = uninitialized; 0 = off; 1+ = on, for num iterations;
     static Set<Integer> birth = new HashSet<Integer>();
     static Set<Integer> stay_alive = new HashSet<Integer>();
     static {
