@@ -9,7 +9,7 @@ import java.util.Set;
  *
  */
 public class Field {
-    public static final int SLICE_COUNT = 256;
+    public static final int SLICE_COUNT = 16;
 
     /**Map of Slice# to Slice data */
     public Map<Integer,Slice> slices = new HashMap<Integer,Slice>();

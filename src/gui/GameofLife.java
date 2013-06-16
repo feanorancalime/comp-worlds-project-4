@@ -16,7 +16,7 @@ public class GameofLife {
 	// Number of full iterations of the collision detection and resolution system.
 	private static final int COLLISION_ITERATIONS = 4;
 	// Width of the extent in meters.
-	private static final float EXTENT_WIDTH = 256;
+	private static final float EXTENT_WIDTH = 16;
 	
 	private Field slices;
 

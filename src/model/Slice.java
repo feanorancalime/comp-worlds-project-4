@@ -8,7 +8,7 @@ import java.util.Set;
  */
 public class Slice {
     private static final double CELL_ON_CHANCE = 0.60;
-    private static int SIZE = 256;
+    private static int SIZE = 16;
 
     /**The version (iteration) number of this Slice**/
     int version = -1;
