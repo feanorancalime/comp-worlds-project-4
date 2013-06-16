@@ -89,14 +89,28 @@ public class Field {
         for(Integer slice_num : slices.keySet()) {
             required.add((slice_num + 1) % SLICE_COUNT);            //add after
             required.add((slice_num + SLICE_COUNT - 1 ) % SLICE_COUNT); //add before
+            //required.remove(slice_num);                         //remove current
+        }
+
+        for(Integer slice_num : slices.keySet()) {
             required.remove(slice_num);                         //remove current
         }
 
+
+        boolean has_all = true;
+        Set<Integer> slices_needed = new HashSet<Integer>();
+
         for(Integer slice_num : required ) {
-            if(!external_slices.containsKey(slice_num))
-                return false;
+
+            if(!external_slices.containsKey(slice_num)) {
+                has_all = false;
+                slices_needed.add(slice_num);
+            }
         }
-        return true;
+
+        System.out.println("Slices Missing: " + slices_needed.toString());
+
+        return has_all;
     }
 
     /**
@@ -134,7 +148,7 @@ public class Field {
             Slice next = getSlice(slice.number + 1);
             if(prev == null || next == null)
                 throw new IllegalStateException("Not all required slices were present.");
-            this.slices.put(slice.number,slice.updateToCopy(prev, next));
+            field.slices.put(slice.number,slice.updateToCopy(prev, next));
         }
 
         return field;

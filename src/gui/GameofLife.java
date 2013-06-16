@@ -11,11 +11,7 @@ import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.media.j3d.BoundingSphere;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -28,10 +24,12 @@ import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.WindowConstants;
+import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 
+import com.sun.j3d.utils.geometry.Sphere;
 import model.Field;
 import chord.Peer;
 
@@ -42,9 +40,12 @@ public class GameofLife {
 	
 	// Time between generations in milliseconds.
 	private static int PAUSE_RATE = 500;
-	
-	// Width of the extent in meters.
-	private static float EXTENT_WIDTH = 16;
+
+    // Width of the extent in meters.
+    private static float EXTENT_WIDTH = 16;
+
+    // Brightness Steps for lifespan display.
+    private static float BRIGHTNESS_STEPS = 16;
 	
 	// Starting distance of the camera from the game world.
 	private static final double DISTANCE = 3d;
@@ -54,6 +55,9 @@ public class GameofLife {
 	
 	// Map of nodes to display so we don't have to keep recreating them.
 	private Map<Vector3f, BranchGroup> cellMap;
+    private Map<Vector3f, Sphere> sphereMap;
+    private Map<Vector3f, Appearance> appearanceMap;
+    private Map<Vector3f, ColoringAttributes> coloringMap;
 	
 	// This instance's peer object.
 	private Peer p2p;
@@ -67,7 +71,7 @@ public class GameofLife {
 	// Main scene object.
 	private BranchGroup scene;
 
-	/**
+    /**
 	 * Main method.
 	 * @param String args
 	 */
@@ -80,20 +84,23 @@ public class GameofLife {
 	}
 
 	private void tick() {
-//		for (int z = 0; z < EXTENT_WIDTH; z++) {
-//			slices = slices.updateToCopy();
-//		}
+        System.out.println("updating");
+		slices = slices.updateToCopy();
 		// Draw the slices for this field
 		for (int z = 0; z < EXTENT_WIDTH; z++) {
 			for (int y = 0; y < EXTENT_WIDTH; y++) {
 				for (int x = 0; x < EXTENT_WIDTH; x++) {
 					Vector3f key = new Vector3f(x, y, z);
-					BranchGroup cellGroup = cellMap.get(key);
+                    BranchGroup cellGroup = cellMap.get(key);
+                    Sphere cell = sphereMap.get(key);
+                    Appearance appearance = appearanceMap.get(key);
+                    ColoringAttributes ca = coloringMap.get(key);
 					if (slices.getCell(x, y, z) > 0) {
 						// If the cell should be alive and is not already alive, cell is born
 						if (scene.indexOfChild(cellGroup) == -1) {
 							scene.addChild(cellGroup);
 						}
+                        ca.setColor(mapLifeToColor(slices.getCell(x,y,z)));
 					} else {
 						// Otherwise, cell dies
 						cellGroup.detach();
@@ -103,9 +110,23 @@ public class GameofLife {
 		}
 	}
 
-	/*
-	 * Launches the UI for the game. 
-	 */
+    /**
+     * Maps a cell's lifespan to a color
+     * @param cell_lifespan
+     * @return
+     */
+    private Color3f mapLifeToColor(int cell_lifespan) {
+        float brightness = cell_lifespan / BRIGHTNESS_STEPS;
+        brightness = Math.min(1f,brightness);
+        brightness = Math.max(0f,brightness);
+
+
+        return new Color3f(brightness,brightness,brightness);
+    }
+
+    /*
+      * Launches the UI for the game.
+      */
 	private void createAndShowGUI() {
 		// Fix for background flickering on some platforms
 		System.setProperty("sun.awt.noerasebackground", "true");
@@ -142,20 +163,35 @@ public class GameofLife {
         
         // Map of cell objects
         cellMap = new HashMap<>();
+        sphereMap = new HashMap<>();
+        appearanceMap = new HashMap<>();
+        coloringMap = new HashMap<>();
+
 		for (int z = 0; z < EXTENT_WIDTH; z++) {
 			for (int y = 0; y < EXTENT_WIDTH; y++) {
 				for (int x = 0; x < EXTENT_WIDTH; x++) {
-					TransformGroup cubeGroup = new TransformGroup();
-					ColorCube cube = new ColorCube(0.3f);
-					cubeGroup.addChild(cube);
+					TransformGroup sphereGroup = new TransformGroup();
+					Sphere sphere = new Sphere(0.3f);
+                    Appearance appearance = new Appearance();
+                    ColoringAttributes ca = new ColoringAttributes(new Color3f(1,0,0),ColoringAttributes.FASTEST);
+                    appearance.setColoringAttributes(ca);
+                    sphere.setAppearance(appearance);
+                    sphere.setCapability(Sphere.ENABLE_APPEARANCE_MODIFY);
+                    ca.setCapability(ColoringAttributes.ALLOW_COLOR_WRITE);
+
+					sphereGroup.addChild(sphere);
 					Transform3D cubeTransform = new Transform3D();
 					
 					cubeTransform.setTranslation(new Vector3f(x, y, z));
-					cubeGroup.setTransform(cubeTransform);
+					sphereGroup.setTransform(cubeTransform);
 					// Added branchgroup to deal with exceptions
 					BranchGroup bg = new BranchGroup();
-					bg.addChild(cubeGroup);
-					cellMap.put(new Vector3f(x, y, z), bg);
+                    bg.setCapability(BranchGroup.ALLOW_DETACH);
+					bg.addChild(sphereGroup);
+                    cellMap.put(new Vector3f(x, y, z), bg);
+                    sphereMap.put(new Vector3f(x, y, z), sphere);
+                    appearanceMap.put(new Vector3f(x, y, z), appearance);
+                    coloringMap.put(new Vector3f(x, y, z), ca);
 				}
 			}
 		}

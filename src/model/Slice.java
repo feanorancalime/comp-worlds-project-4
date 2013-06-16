@@ -7,7 +7,7 @@ import java.util.Set;
  * Models a Slice of data.
  */
 public class Slice {
-    private static final double CELL_ON_CHANCE = 0.60;
+    private static final double CELL_ON_CHANCE = 0.03;
     private static int SIZE = 16;
 
     /**The version (iteration) number of this Slice**/
@@ -18,6 +18,7 @@ public class Slice {
     public int[][] cells = new int[SIZE][SIZE]; //-1 = uninitialized; 0 = off; 1+ = on, for num iterations;
     /**The adjacency values on which we should change an empty cell to a filled cell**/
     static Set<Integer> birth = new HashSet<Integer>();
+
     /**The adjacency values on which we should keep an "on" cell "on"**/
     static Set<Integer> stay_alive = new HashSet<Integer>();
     static {
