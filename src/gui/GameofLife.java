@@ -1,4 +1,6 @@
 package gui;
+import com.sun.j3d.utils.geometry.Box;
+import com.sun.j3d.utils.geometry.ColorCube;
 import com.sun.j3d.utils.universe.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -6,14 +8,17 @@ import javax.media.j3d.*;
 import javax.swing.*;
 import javax.vecmath.*;
 
+import model.Field;
+
 public class GameofLife {
 	// Physics updates per second (approximate).
 	private static final int UPDATE_RATE = 30;
 	// Number of full iterations of the collision detection and resolution system.
 	private static final int COLLISION_ITERATIONS = 4;
 	// Width of the extent in meters.
-	private static final float EXTENT_WIDTH = 20;
-
+	private static final float EXTENT_WIDTH = 256;
+	
+	private Field slices;
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -53,9 +58,25 @@ public class GameofLife {
 		extentTransform.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 		extentTransform.addChild(createExtent());
 		scene.addChild(extentTransform);
-//		for (PhysicsObject o : objects)
-//			scene.addChild(o.BG);
-//		simpleU.addBranchGraph(trueScene);
+		
+		slices = new Field();
+		// Draw the slices for this field
+		for (int z = 0; z < EXTENT_WIDTH; z++) {
+			for (int y = 0; y < EXTENT_WIDTH; y++) {
+				for (int x = 0; x < EXTENT_WIDTH; x++) {
+					if (slices.getCell(x, y, z) > 0) {
+						TransformGroup cubeGroup = new TransformGroup();
+						ColorCube cube = new ColorCube(0.5f);
+						cubeGroup.addChild(cube);
+						Transform3D cubeTransform = new Transform3D();
+						cubeTransform.setTranslation(new Vector3d(x, y, z));
+						cubeGroup.setTransform(cubeTransform);
+						scene.addChild(cubeGroup);
+					}
+				}
+			}
+		}
+		simpleU.addBranchGraph(trueScene);
 
 		JFrame appFrame = new JFrame("Physics Demo");
 		appFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -131,20 +152,14 @@ public class GameofLife {
 //		}
 	}
 
-	private static Node createExtent() {
-		float[] coordinates = {-EXTENT_WIDTH/2, -EXTENT_WIDTH/2, 0,
-		                       EXTENT_WIDTH/2, -EXTENT_WIDTH/2, 0,
-		                       EXTENT_WIDTH/2, EXTENT_WIDTH/2, 0,
-		                       -EXTENT_WIDTH/2, EXTENT_WIDTH/2, 0,
-		                       -EXTENT_WIDTH/2, -EXTENT_WIDTH/2, 0};
-		LineStripArray geometry = new LineStripArray(5, GeometryArray.COORDINATES, new int[] {5});
-		
-		geometry.setCoordinates(0, coordinates);
-		Shape3D shape = new Shape3D(geometry);
-		Appearance appearance = new Appearance();
-		appearance.setColoringAttributes(new ColoringAttributes(1f, 1f, 1f, ColoringAttributes.FASTEST));
-		shape.setAppearance(appearance);
-		
-		return shape;
+	private static Node createExtent() {	
+        Appearance app = new Appearance();
+        PolygonAttributes polyAttribs = new PolygonAttributes(PolygonAttributes.POLYGON_LINE, PolygonAttributes.CULL_NONE, 0);
+        app.setPolygonAttributes(polyAttribs);
+        app.setColoringAttributes(new ColoringAttributes(new Color3f(1.0f, 1.0f, 1.0f), ColoringAttributes.FASTEST));
+        float dim = EXTENT_WIDTH / 2  - 0.02f;
+		Box extent = new Box(dim, dim, dim, app);
+        extent.setPickable(true);
+		return extent;
 	}
 }

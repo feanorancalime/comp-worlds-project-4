@@ -8,13 +8,14 @@ import java.util.Set;
  */
 public class Slice {
     private static final double CELL_ON_CHANCE = 0.60;
+    private static int SIZE = 256;
 
     /**The version (iteration) number of this Slice**/
     int version = -1;
     /**The number (index) of this slice.**/
     int number = -1;
     /**The cells this slice contains**/
-    public int[][] cells = new int[1024][1024]; //-1 = uninitialized; 0 = off; 1+ = on, for num iterations;
+    public int[][] cells = new int[SIZE][SIZE]; //-1 = uninitialized; 0 = off; 1+ = on, for num iterations;
     /**The adjacency values on which we should change an empty cell to a filled cell**/
     static Set<Integer> birth = new HashSet<Integer>();
     /**The adjacency values on which we should keep an "on" cell "on"**/

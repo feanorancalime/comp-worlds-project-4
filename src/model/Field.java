@@ -1,8 +1,5 @@
 package model;
 
-import sun.plugin.dom.exception.InvalidStateException;
-
-import javax.management.modelmbean.RequiredModelMBean;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,7 +9,7 @@ import java.util.Set;
  *
  */
 public class Field {
-    public static final int SLICE_COUNT = 1024;
+    public static final int SLICE_COUNT = 256;
 
     /**Map of Slice# to Slice data */
     public Map<Integer,Slice> slices = new HashMap<Integer,Slice>();
@@ -127,7 +124,7 @@ public class Field {
      */
     public Field updateToCopy() {
         if(!hasRequiredSlices())
-            throw new InvalidStateException("Field does not have all required slices. Cannot update.");
+            throw new IllegalStateException("Field does not have all required slices. Cannot update.");
 
         Field field = new Field();
         field.version = this.version + 1; //returning next version
@@ -136,7 +133,7 @@ public class Field {
             Slice prev = getSlice(slice.number-1);
             Slice next = getSlice(slice.number + 1);
             if(prev == null || next == null)
-                throw new InvalidStateException("Not all required slices were present.");
+                throw new IllegalStateException("Not all required slices were present.");
             this.slices.put(slice.number,slice.updateToCopy(prev, next));
         }
 
