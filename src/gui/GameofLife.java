@@ -1,4 +1,6 @@
 package gui;
+import gui.FlyCam;
+
 import com.sun.j3d.utils.geometry.Box;
 import com.sun.j3d.utils.geometry.ColorCube;
 import com.sun.j3d.utils.universe.*;
@@ -17,6 +19,8 @@ public class GameofLife {
 	private static final int COLLISION_ITERATIONS = 4;
 	// Width of the extent in meters.
 	private static final float EXTENT_WIDTH = 16;
+	
+	double DISTANCE = 3d;
 	
 	private Field slices;
 
@@ -54,10 +58,15 @@ public class GameofLife {
 		scene.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
 		worldScaleTG.addChild(scene);
 		
-		final TransformGroup extentTransform = new TransformGroup();
-		extentTransform.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-		extentTransform.addChild(createExtent());
-		scene.addChild(extentTransform);
+		// View movement
+		Point3d focus = new Point3d();
+        Point3d camera = new Point3d(1,1,1);
+        Vector3d up = new Vector3d(0,1,0);
+        TransformGroup lightTransform = new TransformGroup();
+        TransformGroup curTransform = new TransformGroup();
+        FlyCam fc = new FlyCam(simpleU.getViewingPlatform().getViewPlatformTransform(),focus,camera,up,DISTANCE, lightTransform, curTransform);
+        fc.setSchedulingBounds(new BoundingSphere(new Point3d(),1000.0));
+        scene.addChild(fc);
 		
 		slices = new Field();
 		// Draw the slices for this field
@@ -66,11 +75,15 @@ public class GameofLife {
 				for (int x = 0; x < EXTENT_WIDTH; x++) {
 					if (slices.getCell(x, y, z) > 0) {
 						TransformGroup cubeGroup = new TransformGroup();
-						ColorCube cube = new ColorCube(0.5f);
+						ColorCube cube = new ColorCube(0.3f);
 						cubeGroup.addChild(cube);
 						Transform3D cubeTransform = new Transform3D();
-						cubeTransform.setTranslation(new Vector3d(x, y, z));
+						
+						cubeTransform.setTranslation(new Vector3f(x, y, z));
+//						cubeTransform.setScale(.9 / EXTENT_WIDTH);
 						cubeGroup.setTransform(cubeTransform);
+
+						
 						scene.addChild(cubeGroup);
 					}
 				}
@@ -87,40 +100,6 @@ public class GameofLife {
 //		if (Toolkit.getDefaultToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH))
 //			appFrame.setExtendedState(appFrame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 		
-		canvas3D.addMouseMotionListener(new MouseMotionAdapter() {
-			private MouseEvent lastDragEvent;
-
-			public void mouseDragged(MouseEvent e) {
-				if (lastDragEvent != null) {
-					Vector2f lastMouseVector = new Vector2f(lastDragEvent.getX() - canvas3D.getWidth() / 2, lastDragEvent.getY() - canvas3D.getHeight() / 2);
-					Vector2f currentMouseVector = new Vector2f(e.getX() - canvas3D.getWidth() / 2, e.getY() - canvas3D.getHeight() / 2);
-					Vector2f deltaVector = new Vector2f();
-					deltaVector.scaleAdd(-1, lastMouseVector, currentMouseVector);
-					float rotationAngle = -Math.signum(lastMouseVector.x * deltaVector.y - lastMouseVector.y * deltaVector.x) * lastMouseVector.angle(currentMouseVector);
-					Transform3D rotationTransform = new Transform3D();
-					rotationTransform.rotZ(rotationAngle);
-					// Rotate the extent
-					Transform3D extT3D = new Transform3D();
-					extentTransform.getTransform(extT3D);
-					extT3D.mul(rotationTransform, extT3D);
-					extentTransform.setTransform(extT3D);
-					// Rotate each boundary
-					Vector3f tmp = new Vector3f();
-//					for (HalfSpace hs : boundaries) {
-//						// Only normals are used at the moment, so only rotate normals.
-//						tmp.x = hs.normal.x;
-//						tmp.y = hs.normal.y;
-//						rotationTransform.transform(tmp);
-//						hs.normal.x = tmp.x;
-//						hs.normal.y = tmp.y;
-//					}
-				}
-				lastDragEvent = e;
-			}
-
-			public void mouseMoved(MouseEvent e) {
-				lastDragEvent = null;
-			}});
 		new Timer(1000 / UPDATE_RATE, new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				canvas3D.stopRenderer();
@@ -133,33 +112,6 @@ public class GameofLife {
 	}
 	
 	private void tick() {
-//		for (PhysicsObject o : objects) {
-//			// Hard-coded gravity
-//			o.forceAccumulator.y = -10 * o.mass;
-//			o.updateState(1f / UPDATE_RATE);
-//		}
-//		for (int i = 0; i < COLLISION_ITERATIONS; i++)
-//			for (PhysicsObject o : objects) {
-//				for (HalfSpace hs : boundaries)
-//					CollisionHandler.checkAndResolveCollision(hs, o);
-//				for (PhysicsObject o2 : objects)
-//					CollisionHandler.checkAndResolveCollision(o2, o);
-//			}
-//		for (PhysicsObject o : objects) {
-//			o.updateTransformGroup();
-//			// Clear the object's force accumulator.
-//			o.forceAccumulator.x = o.forceAccumulator.y = 0;
-//		}
-	}
-
-	private static Node createExtent() {	
-        Appearance app = new Appearance();
-        PolygonAttributes polyAttribs = new PolygonAttributes(PolygonAttributes.POLYGON_LINE, PolygonAttributes.CULL_NONE, 0);
-        app.setPolygonAttributes(polyAttribs);
-        app.setColoringAttributes(new ColoringAttributes(new Color3f(1.0f, 1.0f, 1.0f), ColoringAttributes.FASTEST));
-        float dim = EXTENT_WIDTH / 2  - 0.02f;
-		Box extent = new Box(dim, dim, dim, app);
-        extent.setPickable(true);
-		return extent;
+		// Update goes here
 	}
 }
