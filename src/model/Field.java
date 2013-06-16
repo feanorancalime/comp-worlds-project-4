@@ -140,7 +140,7 @@ public class Field {
         	
             throw new IllegalStateException("Field does not have all required slices. Cannot update.");
 
-        Field field = new Field();
+        Field field = new Field(this);
         field.version = this.version + 1; //returning next version
 
         for(Slice slice : this.slices.values()) {
@@ -152,5 +152,19 @@ public class Field {
         }
 
         return field;
+    }
+
+    /**
+     * Is the passed slice_num an internally managed slice?
+     */
+    public boolean isInternalSlice(int slice_num) {
+        return internalSlices().containsKey(slice_num);
+    }
+
+    /**
+     * Is the passed slice_num an externally managed slice?
+     */
+    public boolean isExternalSlice(int slice_num) {
+        return externalSlices().containsKey(slice_num);
     }
 }

@@ -100,7 +100,12 @@ public class GameofLife {
 						if (scene.indexOfChild(cellGroup) == -1) {
 							scene.addChild(cellGroup);
 						}
-                        ca.setColor(mapLifeToColor(slices.getCell(x,y,z)));
+                        if(slices.isInternalSlice(z))
+                            ca.setColor(mapLifeToColor(slices.getCell(x,y,z)));
+                        else if(slices.isExternalSlice(z))
+                            ca.setColor(mapOutsourcedLifeToColor(slices.getCell(x, y, z)));
+                        else
+                            ca.setColor(new Color3f(0,1,0));
 					} else {
 						// Otherwise, cell dies
 						cellGroup.detach();
@@ -110,8 +115,23 @@ public class GameofLife {
 		}
 	}
 
+
     /**
-     * Maps a cell's lifespan to a color
+     * Maps a cell's lifespan to a color. For nodes we don't
+     * @param cell_lifespan
+     * @return
+     */
+    private Color3f mapOutsourcedLifeToColor(int cell_lifespan) {
+        float brightness = cell_lifespan / BRIGHTNESS_STEPS;
+        brightness = Math.min(1f,brightness);
+        brightness = Math.max(0f,brightness);
+
+
+        return new Color3f(brightness,0,0);
+    }
+
+    /**
+     * Maps a cell's lifespan to a color. For nodes we control.
      * @param cell_lifespan
      * @return
      */

@@ -30,7 +30,7 @@ public class Slice {
         stay_alive.add(5);
         stay_alive.add(6);
         stay_alive.add(7);
-        stay_alive.add(8);
+        //stay_alive.add(8);
     }
 
     /**Construct with defaults**/
