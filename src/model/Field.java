@@ -12,10 +12,10 @@ public class Field {
     public static final int SLICE_COUNT = 16;
 
     /**Map of Slice# to Slice data */
-    public Map<Integer,Slice> slices = new HashMap<Integer,Slice>();
+    public Map<Integer, Slice> slices = new HashMap<Integer,Slice>();
 
     /**Map of Slice# to Slice data. These are not managed by this node, but are required to calculate the ones that are.*/
-    public Map<Integer,Slice> external_slices = new HashMap<Integer,Slice>();
+    public Map<Integer, Slice> external_slices = new HashMap<Integer,Slice>();
 
     public int version = -1;
 
@@ -87,8 +87,8 @@ public class Field {
     public boolean hasRequiredSlices() {
         Set<Integer> required = new HashSet<Integer>();
         for(Integer slice_num : slices.keySet()) {
-            required.add((slice_num+1)%SLICE_COUNT);            //add after
-            required.add((slice_num+SLICE_COUNT-1)%SLICE_COUNT);//add before
+            required.add((slice_num + 1) % SLICE_COUNT);            //add after
+            required.add((slice_num + SLICE_COUNT - 1 ) % SLICE_COUNT); //add before
             required.remove(slice_num);                         //remove current
         }
 
@@ -96,7 +96,6 @@ public class Field {
             if(!external_slices.containsKey(slice_num))
                 return false;
         }
-
         return true;
     }
 
@@ -124,13 +123,14 @@ public class Field {
      */
     public Field updateToCopy() {
         if(!hasRequiredSlices())
+        	
             throw new IllegalStateException("Field does not have all required slices. Cannot update.");
 
         Field field = new Field();
         field.version = this.version + 1; //returning next version
 
         for(Slice slice : this.slices.values()) {
-            Slice prev = getSlice(slice.number-1);
+            Slice prev = getSlice(slice.number - 1);
             Slice next = getSlice(slice.number + 1);
             if(prev == null || next == null)
                 throw new IllegalStateException("Not all required slices were present.");
