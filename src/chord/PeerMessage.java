@@ -1,8 +1,7 @@
 package chord;
-import model.Slice;
-import org.omg.CORBA.PUBLIC_MEMBER;
-
 import java.io.Serializable;
+
+import model.Slice;
 
 public class PeerMessage implements Serializable {
 	private static final long serialVersionUID = -8361483433000719806L;

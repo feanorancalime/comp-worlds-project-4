@@ -18,7 +18,21 @@ import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.WindowConstants;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
@@ -36,7 +50,7 @@ public class GameofLife {
 	private static int PAUSE_RATE = 500;
 
     // Width of the extent in meters.
-    private static float EXTENT_WIDTH = 16;
+    private static float DEFAULT_WORLD_SIZE = 16;
 
     // Brightness Steps for lifespan display.
     private static float BRIGHTNESS_STEPS = 16;
@@ -67,6 +81,10 @@ public class GameofLife {
 
 	private Timer gameTimer;
 
+	private JMenu newGameMenu;
+
+	private JMenu chordMenu; 
+
 	/**
 	 * Main method.
 	 * @param  args
@@ -83,9 +101,9 @@ public class GameofLife {
         System.out.println("updating");
 		slices = slices.updateToCopy();
 		// Draw the slices for this field
-		for (int z = 0; z < EXTENT_WIDTH; z++) {
-			for (int y = 0; y < EXTENT_WIDTH; y++) {
-				for (int x = 0; x < EXTENT_WIDTH; x++) {
+		for (int z = 0; z < DEFAULT_WORLD_SIZE; z++) {
+			for (int y = 0; y < DEFAULT_WORLD_SIZE; y++) {
+				for (int x = 0; x < DEFAULT_WORLD_SIZE; x++) {
 					Vector3f key = new Vector3f(x, y, z);
                     BranchGroup cellGroup = cellMap.get(key);
                     Sphere cell = sphereMap.get(key);
@@ -140,24 +158,19 @@ public class GameofLife {
         return new Color3f(brightness,brightness,brightness);
     }
 
-    /*
-      * Launches the UI for the game.
-      */
+    /**
+     * Launches the UI for the game.
+     */
 	private void createAndShowGUI() {
 		// Fix for background flickering on some platforms
 		System.setProperty("sun.awt.noerasebackground", "true");
-		
-//		final JCanvas3D jCanvas3d = new JCanvas3D();
-//		jCanvas3d.setPreferredSize(new Dimension(800,600));
-//		jCanvas3d.setSize(new Dimension(800,600));
-//		final Canvas3D canvas3D = jCanvas3d.getOffscreenCanvas3D();
 		
 		// Add a scaling transform that resizes the virtual world to fit
 		// within the standard view frustum.
 		BranchGroup trueScene = new BranchGroup();
 		TransformGroup worldScaleTG = new TransformGroup();
 		Transform3D t3D = new Transform3D();
-		t3D.setScale(.9 / EXTENT_WIDTH);
+		t3D.setScale(.9 / DEFAULT_WORLD_SIZE);
 		worldScaleTG.setTransform(t3D);
 		trueScene.addChild(worldScaleTG);
 		scene = new BranchGroup();
@@ -192,9 +205,9 @@ public class GameofLife {
         appearanceMap = new HashMap<>();
         coloringMap = new HashMap<>();
 
-		for (int z = 0; z < EXTENT_WIDTH; z++) {
-			for (int y = 0; y < EXTENT_WIDTH; y++) {
-				for (int x = 0; x < EXTENT_WIDTH; x++) {
+		for (int z = 0; z < DEFAULT_WORLD_SIZE; z++) {
+			for (int y = 0; y < DEFAULT_WORLD_SIZE; y++) {
+				for (int x = 0; x < DEFAULT_WORLD_SIZE; x++) {
 					TransformGroup sphereGroup = new TransformGroup();
 					Sphere sphere = new Sphere(0.3f);
                     Appearance appearance = new Appearance();
@@ -217,7 +230,6 @@ public class GameofLife {
                     sphereMap.put(new Vector3f(x, y, z), sphere);
                     appearanceMap.put(new Vector3f(x, y, z), appearance);
                     coloringMap.put(new Vector3f(x, y, z), ca);
-
 				}
 			}
 		}
@@ -227,7 +239,6 @@ public class GameofLife {
 
 		appFrame = new JFrame("Physics Demo");
 		appFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-//        appFrame.add(jCanvas3d);
         appFrame.add(canvas3D, BorderLayout.CENTER);
 		canvas3D.setPreferredSize(new Dimension(800,600));
         appFrame.setJMenuBar(buildMenuBar());
@@ -235,8 +246,6 @@ public class GameofLife {
         
 		appFrame.pack();
         appFrame.setLocationRelativeTo(null);
-//		if (Toolkit.getDefaultToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH))
-//			appFrame.setExtendedState(appFrame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 		
 		gameTimer = new Timer(PAUSE_RATE, new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -253,7 +262,7 @@ public class GameofLife {
     /** Creates a slider **/
 	private final JSlider buildSlider(int min, int max, int value, int spacing) {
 		JSlider slider = new JSlider(min, max, value);
-		slider.setMinorTickSpacing(spacing);
+		slider.setMajorTickSpacing(spacing);
 		slider.setPaintTicks(true);
 		slider.setPaintLabels(true);
 		return slider;
@@ -266,9 +275,10 @@ public class GameofLife {
 	 */
 	private JMenuBar buildMenuBar() {
 		final JMenuBar menuBar = new JMenuBar();
-		// Build the menus
-		final JMenu chordMenu = buildChordMenu("Chord", KeyEvent.VK_C);
-		final JMenu newGameMenu = buildNewGameMenu("New Game", KeyEvent.VK_N);
+		chordMenu = buildChordMenu("Chord", KeyEvent.VK_C);
+		chordMenu.setEnabled(false);
+		newGameMenu = buildNewGameMenu("New Game", KeyEvent.VK_N);
+		newGameMenu.setEnabled(false);
 		// Add the menus to the menu bar
 		menuBar.add(chordMenu);
 		menuBar.add(newGameMenu);
@@ -306,7 +316,7 @@ public class GameofLife {
 	}
 	
 	/**
-	 * Provides an action to add an icosahedron.
+	 * Provides an action to start a new game.
 	 */
 	@SuppressWarnings("serial")
 	private class NewGameAction extends AbstractAction  {
@@ -330,21 +340,17 @@ public class GameofLife {
 		 */
 		@Override
 		public void actionPerformed(final ActionEvent event) {
-			JSlider sizeSlider;
 			JSlider timeSlider;
 			
-			sizeSlider = buildSlider(4, 32, 16, 2);
 			timeSlider = buildSlider(100, 1000, PAUSE_RATE, 100);
 			final JComponent[] inputs = new JComponent[] {
-					new JLabel("World Size: "),
-					sizeSlider,
 					new JLabel("Time Between Generations (ms): "),
 					timeSlider
 			};
 			int input = JOptionPane.showConfirmDialog(null, inputs, "Create New Game", JOptionPane.YES_NO_OPTION);
 			if (input == JOptionPane.YES_OPTION) {
-				EXTENT_WIDTH = sizeSlider.getValue();
 				PAUSE_RATE = timeSlider.getValue();
+				// Remove all the previous representations of the cells
 				for (Vector3f key: cellMap.keySet()) {
 					BranchGroup cellGroup = cellMap.get(key);
 					cellGroup.detach();
@@ -353,8 +359,9 @@ public class GameofLife {
 			}
 		}
 	}
+	
 	/**
-	 * Provides an action to add an icosahedron.
+	 * Provides an action to add an peer connection.
 	 */
 	@SuppressWarnings("serial")
 	private class PeerConnectAction extends AbstractAction  {
@@ -387,7 +394,7 @@ public class GameofLife {
 					new JLabel("Chord ID: "),
 					chordId
 			};
-			int input = JOptionPane.showConfirmDialog(null, inputs, "Connect to Peer", JOptionPane.YES_NO_OPTION);
+			int input = JOptionPane.showConfirmDialog(null, inputs, "Connect to Peer?", JOptionPane.YES_NO_OPTION);
 			if (input == JOptionPane.YES_OPTION) {
 				InetAddress host = null;
 				try {
@@ -442,9 +449,11 @@ public class GameofLife {
 		}
 	}
 
-	/** Builds the control panel **/
+	/** 
+	 * Builds the panel for a start / stop button.
+	 * 
+	 **/
 	private final JPanel buildControlPanel() {
-		// Basic panel setups
 		JPanel controlPanel = new JPanel();
 		
 		GridLayout buttonGrid = new GridLayout(0, 1);
@@ -458,92 +467,17 @@ public class GameofLife {
 			public void actionPerformed(ActionEvent e) {
 				if (gameTimer.isRunning()) {
 					gameTimer.stop();
+					newGameMenu.setEnabled(true);
+					chordMenu.setEnabled(true);
 					button.setText("Start");
 				} else {
 					gameTimer.start();
+					newGameMenu.setEnabled(false);
+					chordMenu.setEnabled(false);
 					button.setText("Stop");
 				}
 			}
 		});
 		return controlPanel;
 	}
-//        forceFieldEnable.setText("Force Field");
-//        forceFieldEnable.setSelected(true);
-//        checkBoxPanel.add(forceFieldEnable);
-//
-//
-//        for(final ForceBehavior fb : forceBehaviors) {
-//        	// Checkboxes for behaviors
-//            JCheckBox behaviorEnable = new JCheckBox();
-//            behaviorEnable.addChangeListener(new ChangeListener() {
-//				
-//				@Override
-//				public void stateChanged(ChangeEvent e) {
-//					JCheckBox source = (JCheckBox) e.getSource();
-//					if (source.isSelected()) {
-//						addBehavior(fb);
-//					} else {
-//						removeBehavior(fb);
-//					}
-//				}
-//			});
-//         
-//            behaviorEnable.setText(fb.getName());
-//            behaviorEnable.setSelected(true);
-//            checkBoxPanel.add(behaviorEnable);
-//            
-//            // Sliders for magnitude of forces
-//            final float max = fb.getForceMaximum();
-//            final float min = fb.getForceMinimum();
-//            final float cur = fb.getForceMagnitude();     
-//            
-//    		final JSlider forceMagnitudeSlider = new JSlider();
-//            
-//	        sliderPanel.add(new JLabel(fb.getName()));
-//			sliderPanel.add(forceMagnitudeSlider);
-//			final JLabel forceMagLabel = new JLabel("" + (int) cur);
-//			sliderPanel.add(forceMagLabel);
-//			
-//			forceMagnitudeSlider.setMinorTickSpacing(1);
-//            forceMagnitudeSlider.setMaximum((int) (max * 100));
-//            forceMagnitudeSlider.setMinimum((int) (min * 100));
-//            forceMagnitudeSlider.setValue((int) (cur * 100));
-//            forceMagnitudeSlider.addChangeListener(new ChangeListener() {
-//            	
-//				ForceBehavior associatedBehavior = fb;
-//				
-//				@Override
-//				public void stateChanged(ChangeEvent e) {
-//					JSlider slider = (JSlider) e.getSource();
-//    				forceMagLabel.setText("" + Math.round(slider.getValue() / 100f));
-//                    associatedBehavior.setForceMagnitude(slider.getValue() / 100f);
-//                    forceField.resetMaxLength(); //clear the max length so it can adjust quickly
-//                    System.out.printf("Slider Changed: Min (%02.2f) Max (%02.2f) Cur (%02.2f)\n", min, max, cur);
-//				}
-//			});
-//            
-//        }
-//		
-//    	JSlider coefficientOfRestitutionSlider = buildSlider(0, 100, (int)(coefficientOfRestitution*100));
-//		sliderPanel.add(new JLabel("Coefficient of restitution"));
-//		sliderPanel.add(coefficientOfRestitutionSlider);
-//		final JLabel coefficientLabel = new JLabel("" + coefficientOfRestitutionSlider.getValue());
-//		sliderPanel.add(coefficientLabel);
-//		
-//		ChangeListener coefficientListener = new ChangeListener() {
-//			@Override
-//			public void stateChanged(ChangeEvent e) {
-//				JSlider source = (JSlider) e.getSource();
-//				coefficientOfRestitution = source.getValue()/100f;
-//				coefficientLabel.setText("" + source.getValue() + "%");
-//                //update the coefficients
-//                for(CollisionBehavior cb : collisionBehaviors)
-//                    cb.setCoefficientOfRestitution(coefficientOfRestitution);
-//			}
-//		};
-//		coefficientOfRestitutionSlider.addChangeListener(coefficientListener);
-//
-//		return controlPanel;
-//	}
-
 }
