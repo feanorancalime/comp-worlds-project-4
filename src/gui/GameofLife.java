@@ -123,8 +123,6 @@ public class GameofLife {
 				for (int x = 0; x < DEFAULT_WORLD_SIZE; x++) {
 					Vector3f key = new Vector3f(x, y, z);
                     BranchGroup cellGroup = cellMap.get(key);
-//                    Sphere cell = sphereMap.get(key);
-//                    Appearance appearance = appearanceMap.get(key);
                     ColoringAttributes ca = coloringMap.get(key);
 					if (slices.getCell(x, y, z) > 0) {
 						// If the cell should be alive and is not already alive, cell is born
@@ -143,21 +141,6 @@ public class GameofLife {
 			}
 		}
 	}
-
-
-//    /**
-//     * Maps a cell's lifespan to a color. For nodes we don't
-//     * @param cell_lifespan
-//     * @return
-//     */
-//    private Color3f mapOutsourcedLifeToColor(int cell_lifespan) {
-//        float brightness = cell_lifespan / BRIGHTNESS_STEPS;
-//        brightness = Math.min(1f,brightness);
-//        brightness = Math.max(0f,brightness);
-//
-//
-//        return new Color3f(brightness,0,0);
-//    }
 
     /**
      * Maps a cell's lifespan to a color. For nodes we control.
