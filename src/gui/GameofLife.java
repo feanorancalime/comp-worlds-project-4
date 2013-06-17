@@ -1,6 +1,8 @@
 package gui;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -62,6 +64,8 @@ public class GameofLife {
 
 	// SimpleUniverse object.
 	private SimpleUniverse simpleU;
+
+	private Timer gameTimer;
 
 	/**
 	 * Main method.
@@ -224,22 +228,24 @@ public class GameofLife {
 		appFrame = new JFrame("Physics Demo");
 		appFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 //        appFrame.add(jCanvas3d);
-        appFrame.add(canvas3D);
+        appFrame.add(canvas3D, BorderLayout.CENTER);
 		canvas3D.setPreferredSize(new Dimension(800,600));
         appFrame.setJMenuBar(buildMenuBar());
+        appFrame.add(buildControlPanel(), BorderLayout.SOUTH);
         
 		appFrame.pack();
         appFrame.setLocationRelativeTo(null);
 //		if (Toolkit.getDefaultToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH))
 //			appFrame.setExtendedState(appFrame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 		
-		new Timer(PAUSE_RATE, new ActionListener() {
+		gameTimer = new Timer(PAUSE_RATE, new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				canvas3D.startRenderer();
 				tick();
 				canvas3D.startRenderer();
 			}
-		}).start();
+		});
+		gameTimer.start();
 		
 		appFrame.setVisible(true);
 	}
@@ -441,38 +447,31 @@ public class GameofLife {
 		}
 	}
 
-//	/** Builds the control panel **/
-//	private final JPanel buildControlPanel() {
-//		// Basic panel setups
-//		JPanel controlPanel = new JPanel();
-//		JPanel checkBoxPanel = new JPanel();
-//		JPanel sliderPanel = new JPanel();
-//		
-//		GridLayout radioButtonGrid = new GridLayout(0, 1);
-//		GridLayout sliderGrid = new GridLayout(0, 3);
-//		checkBoxPanel.setLayout(radioButtonGrid);
-//		sliderPanel.setLayout(sliderGrid);
-//		
-//		controlPanel.add(checkBoxPanel, BorderLayout.EAST);
-//		controlPanel.add(sliderPanel, BorderLayout.WEST);
-//
-//		// Add controls for forces
-//		
-//		// Add control for force field
-//        JCheckBox forceFieldEnable = new JCheckBox();
-//        forceFieldEnable.addItemListener(new ItemListener() {
-//
-//            @Override
-//            public void itemStateChanged(ItemEvent e) {
-//                JCheckBox source = (JCheckBox) e.getSource();
-//                if (source.isSelected()) {
-//                    setForceFieldEnabled(true);
-//                } else {
-//                    setForceFieldEnabled(false);
-//                }
-//            }
-//        });
-//     
+	/** Builds the control panel **/
+	private final JPanel buildControlPanel() {
+		// Basic panel setups
+		JPanel controlPanel = new JPanel();
+		
+		GridLayout buttonGrid = new GridLayout(0, 1);
+		controlPanel.setLayout(buttonGrid);
+		
+		final JButton button = new JButton("Stop");
+		controlPanel.add(button);
+		button.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (gameTimer.isRunning()) {
+					gameTimer.stop();
+					button.setText("Start");
+				} else {
+					gameTimer.start();
+					button.setText("Stop");
+				}
+			}
+		});
+		return controlPanel;
+	}
 //        forceFieldEnable.setText("Force Field");
 //        forceFieldEnable.setSelected(true);
 //        checkBoxPanel.add(forceFieldEnable);
@@ -551,6 +550,5 @@ public class GameofLife {
 //
 //		return controlPanel;
 //	}
-//
 
 }
