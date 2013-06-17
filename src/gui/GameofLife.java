@@ -345,15 +345,10 @@ public class GameofLife {
 			if (input == JOptionPane.YES_OPTION) {
 				EXTENT_WIDTH = sizeSlider.getValue();
 				PAUSE_RATE = timeSlider.getValue();
-				for (int z = 0; z < EXTENT_WIDTH; z++) {
-					for (int y = 0; y < EXTENT_WIDTH; y++) {
-						for (int x = 0; x < EXTENT_WIDTH; x++) {
-							Vector3f key = new Vector3f(x, y, z);
-							BranchGroup cellGroup = cellMap.get(key);
-								cellGroup.detach();
-							}
-						}
-					}
+				for (Vector3f key: cellMap.keySet()) {
+					BranchGroup cellGroup = cellMap.get(key);
+					cellGroup.detach();
+				}
 				slices = new Field();
 			}
 		}

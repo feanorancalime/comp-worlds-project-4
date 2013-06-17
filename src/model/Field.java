@@ -9,7 +9,8 @@ import java.util.Set;
  *
  */
 public class Field {
-    public static final int SLICE_COUNT = 16;
+	
+    private static int SLICE_COUNT = 16;
 
     /**Map of Slice# to Slice data */
     public Map<Integer, Slice> slices = new HashMap<Integer,Slice>();
@@ -23,15 +24,19 @@ public class Field {
         for(int i = 0; i < SLICE_COUNT; i++) {
             slices.put(i,new Slice(i,0));
         }
-
         this.version = 0;
+    }
+    
+    public Field(int size) {
+    	SLICE_COUNT = size;
+    	for(int i = 0; i < SLICE_COUNT; i++) {
+    		slices.put(i,new Slice(i,0));
+    	}
+    	this.version = 0;
     }
 
     public Field(Field other) {
         this.version = other.version;
-//        for(Slice slice : other.slices.values()) {
-//            this.slices.put(slice.number,slice.clone());
-//        }
     }
 
     /**
