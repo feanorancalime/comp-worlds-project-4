@@ -1,5 +1,7 @@
 package model;
 
+import chord.Peer;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,13 +12,12 @@ import java.util.Set;
  */
 public class Field {
 	
-    private static int SLICE_COUNT = 16;
+    public static int SLICE_COUNT = 16;
 
     /**Map of Slice# to Slice data */
     public Map<Integer, Slice> slices = new HashMap<Integer,Slice>();
-
-    /**Map of Slice# to Slice data. These are not managed by this node, but are required to calculate the ones that are.*/
-    public Map<Integer, Slice> external_slices = new HashMap<Integer,Slice>();
+    Slice previous = null;
+    Slice next = null;
 
     public int version = -1;
 
@@ -47,13 +48,6 @@ public class Field {
     }
 
     /**
-     * The external slices this Field is storing.
-     */
-    public Map<Integer,Slice> externalSlices() {
-        return external_slices;
-    }
-
-    /**
      * Get the state of a cell
      *
      * @param x first coord in slice
@@ -70,68 +64,25 @@ public class Field {
     }
 
     /**
-     * Request any slices required to update the slices managed by this Field.
-     */
-    public void requestRequiredSlices() {
-        Set<Integer> required = new HashSet<Integer>();
-        for(Integer slice_num : slices.keySet()) {
-            required.add((slice_num+1)%SLICE_COUNT);            //add after
-            required.add((slice_num+SLICE_COUNT-1)%SLICE_COUNT);//add before
-            required.remove(slice_num);                         //remove current
-        }
-
-        for(Integer slice_num : required ) {
-            if(!external_slices.containsKey(slice_num))
-                ;//TODO: request slice
-        }
-    }
-
-    /**
-     * Do we have all the slices we need to update?
-     */
-    public boolean hasRequiredSlices() {
-        Set<Integer> required = new HashSet<Integer>();
-        for(Integer slice_num : slices.keySet()) {
-            required.add((slice_num + 1) % SLICE_COUNT);            //add after
-            required.add((slice_num + SLICE_COUNT - 1 ) % SLICE_COUNT); //add before
-            //required.remove(slice_num);                         //remove current
-        }
-
-        for(Integer slice_num : slices.keySet()) {
-            required.remove(slice_num);                         //remove current
-        }
-
-
-        boolean has_all = true;
-        Set<Integer> slices_needed = new HashSet<Integer>();
-
-        for(Integer slice_num : required ) {
-
-            if(!external_slices.containsKey(slice_num)) {
-                has_all = false;
-                slices_needed.add(slice_num);
-            }
-        }
-
-        System.out.println("Slices Missing: " + slices_needed.toString());
-
-        return has_all;
-    }
-
-    /**
      * Get the specified slice
      * @param slice_num
      * @return null if the slice was not found, the slice otherwise. Slice may not be managed by this Field.
      */
     public Slice getSlice(int slice_num) {
-        if(slice_num < 0)
+        //if too low, return the previous slice (wrapping)
+        if(slice_num < 0 && previous != null)
+            return previous;
+        else if(slice_num < 0)
             slice_num = (slice_num + SLICE_COUNT);
+
+        //if too high, return the next slice (wrapping)
+        if(slice_num >= SLICE_COUNT && next != null)
+            return next;
+
         slice_num = slice_num % SLICE_COUNT;
 
         if(slices.containsKey(slice_num))
             return slices.get(slice_num);
-        else if(external_slices.containsKey(slice_num))
-            return external_slices.get(slice_num);
         else
             return null;
     }
@@ -141,10 +92,6 @@ public class Field {
      * @return The updated field.
      */
     public Field updateToCopy() {
-        if(!hasRequiredSlices())
-        	
-            throw new IllegalStateException("Field does not have all required slices. Cannot update.");
-
         Field field = new Field(this);
         field.version = this.version + 1; //returning next version
 
@@ -166,10 +113,20 @@ public class Field {
         return internalSlices().containsKey(slice_num);
     }
 
-    /**
-     * Is the passed slice_num an externally managed slice?
-     */
-    public boolean isExternalSlice(int slice_num) {
-        return externalSlices().containsKey(slice_num);
+    public void setNext(Slice next) {
+        this.next = next;
+    }
+
+    public void setPrev(Slice prev) {
+        this.previous = prev;
+    }
+
+    public Slice getPrev() {
+        return previous;
+    }
+
+
+    public Slice getNext() {
+        return next;
     }
 }

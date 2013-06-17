@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.media.j3d.Appearance;
@@ -43,6 +44,7 @@ import chord.Peer;
 
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import model.Slice;
 
 public class GameofLife {
 	
@@ -100,14 +102,29 @@ public class GameofLife {
 	private void tick() {
         System.out.println("updating");
 		slices = slices.updateToCopy();
+        //handle peer junk
+        if(p2p != null) {
+            p2p.sendSlices(slices); //loop the slices
+            List<Slice> received = p2p.getReceived();
+            if(received != null) {
+                for(Slice slice : received) {
+                    //next
+                    if(slice.getNumber() == 0) {
+                        slices.setNext(slice);
+                    } else { //prev
+                        slices.setPrev(slice);
+                    }
+                }
+            }
+        }
 		// Draw the slices for this field
 		for (int z = 0; z < DEFAULT_WORLD_SIZE; z++) {
 			for (int y = 0; y < DEFAULT_WORLD_SIZE; y++) {
 				for (int x = 0; x < DEFAULT_WORLD_SIZE; x++) {
 					Vector3f key = new Vector3f(x, y, z);
                     BranchGroup cellGroup = cellMap.get(key);
-                    Sphere cell = sphereMap.get(key);
-                    Appearance appearance = appearanceMap.get(key);
+//                    Sphere cell = sphereMap.get(key);
+//                    Appearance appearance = appearanceMap.get(key);
                     ColoringAttributes ca = coloringMap.get(key);
 					if (slices.getCell(x, y, z) > 0) {
 						// If the cell should be alive and is not already alive, cell is born
@@ -116,8 +133,6 @@ public class GameofLife {
 						}
                         if(slices.isInternalSlice(z))
                             ca.setColor(mapLifeToColor(slices.getCell(x,y,z)));
-                        else if(slices.isExternalSlice(z))
-                            ca.setColor(mapOutsourcedLifeToColor(slices.getCell(x, y, z)));
                         else
                             ca.setColor(new Color3f(0,1,0));
 					} else {
@@ -130,19 +145,19 @@ public class GameofLife {
 	}
 
 
-    /**
-     * Maps a cell's lifespan to a color. For nodes we don't
-     * @param cell_lifespan
-     * @return
-     */
-    private Color3f mapOutsourcedLifeToColor(int cell_lifespan) {
-        float brightness = cell_lifespan / BRIGHTNESS_STEPS;
-        brightness = Math.min(1f,brightness);
-        brightness = Math.max(0f,brightness);
-
-
-        return new Color3f(brightness,0,0);
-    }
+//    /**
+//     * Maps a cell's lifespan to a color. For nodes we don't
+//     * @param cell_lifespan
+//     * @return
+//     */
+//    private Color3f mapOutsourcedLifeToColor(int cell_lifespan) {
+//        float brightness = cell_lifespan / BRIGHTNESS_STEPS;
+//        brightness = Math.min(1f,brightness);
+//        brightness = Math.max(0f,brightness);
+//
+//
+//        return new Color3f(brightness,0,0);
+//    }
 
     /**
      * Maps a cell's lifespan to a color. For nodes we control.
@@ -350,11 +365,16 @@ public class GameofLife {
 			int input = JOptionPane.showConfirmDialog(null, inputs, "Create New Game", JOptionPane.YES_NO_OPTION);
 			if (input == JOptionPane.YES_OPTION) {
 				PAUSE_RATE = timeSlider.getValue();
+				
 				// Remove all the previous representations of the cells
 				for (Vector3f key: cellMap.keySet()) {
 					BranchGroup cellGroup = cellMap.get(key);
 					cellGroup.detach();
 				}
+
+                Field temp = new Field();
+                temp.setNext(slices.getNext());
+                temp.setPrev(slices.getPrev());
 				slices = new Field();
 			}
 		}

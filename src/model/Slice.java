@@ -1,12 +1,13 @@
 package model;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Models a Slice of data.
  */
-public class Slice {
+public class Slice implements Serializable {
     private static final double CELL_ON_CHANCE = 0.03;
     private static int SIZE = 16;
 
