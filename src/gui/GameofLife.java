@@ -273,10 +273,10 @@ public class GameofLife {
 	/**
 	 * Builds the new game menu.
 	 * @param label The label.
-	 * @param vkN The key mnemonic.
+	 * @param vk The key mnemonic.
 	 * @return A JMenu.
 	 */
-	private JMenu buildNewGameMenu(String label, int vkN) {
+	private JMenu buildNewGameMenu(String label, int vk) {
 		JMenu newGameMenu = new JMenu(label);
 		newGameMenu.add(new JMenuItem(
 				new NewGameAction("Settings...")));
@@ -286,13 +286,16 @@ public class GameofLife {
 	/**
 	 * Builds the new game menu.
 	 * @param label The label.
-	 * @param vkA The key mnemonic.
+	 * @param vk The key mnemonic.
 	 * @return A JMenu.
 	 */
-	private JMenu buildChordMenu(String label, int vkA) {
+	private JMenu buildChordMenu(String label, int vk) {
 		JMenu chordMenu = new JMenu(label);
 		chordMenu.add(new JMenuItem(
-				new PeerConnectAction("Connect...")));
+				new CreateNetworkAction("Create network...")));
+		chordMenu.add(new JMenuItem(
+				new PeerConnectAction("Connect to network...")));
+
 		return chordMenu;
 	}
 	
@@ -310,7 +313,7 @@ public class GameofLife {
 		 */
 		public NewGameAction(final String actionName) {
 			super(actionName);
-			putValue(NewGameAction.MNEMONIC_KEY, KeyEvent.VK_N);
+			putValue(NewGameAction.MNEMONIC_KEY, KeyEvent.VK_G);
 		}
 		
 		/**
@@ -395,6 +398,45 @@ public class GameofLife {
 				}
 				long id = Integer.parseInt(chordId.getText());
 				p2p.connectToNetwork(host, id);
+			}
+		}
+	}
+	
+	/**
+	 * Provides an action to add a peer.
+	 */
+	@SuppressWarnings("serial")
+	private class CreateNetworkAction extends AbstractAction  {
+		
+		/**
+		 * Constructs an action for the menu.
+		 * 
+		 * @param actionName
+		 *            The name to be displayed on the menu.
+		 */
+		public CreateNetworkAction(final String actionName) {
+			super(actionName);
+			putValue(NewGameAction.MNEMONIC_KEY, KeyEvent.VK_R);
+		}
+		
+		/**
+		 * Opens a connect dialog.
+		 * 
+		 * @param event
+		 *            The event which triggers the Action.
+		 */
+		@Override
+		public void actionPerformed(final ActionEvent event) {
+			JTextField chordId = new JTextField();
+			
+			final JComponent[] inputs = new JComponent[] {
+					new JLabel("Chord ID: "),
+					chordId
+			};
+			int input = JOptionPane.showConfirmDialog(null, inputs, "Create Network?", JOptionPane.YES_NO_OPTION);
+			if (input == JOptionPane.YES_OPTION) {
+				long id = Integer.parseInt(chordId.getText());
+				p2p.createNetwork(id);
 			}
 		}
 	}
