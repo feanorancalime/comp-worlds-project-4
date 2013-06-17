@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
+ * The game field.
  */
 public class Field {
     public static final int SLICE_COUNT = 16;

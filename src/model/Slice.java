@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Models a Slice of data.
+ * Models a Slice of the field.
  */
 public class Slice implements Serializable {
     private static final double CELL_ON_CHANCE = 0.03;

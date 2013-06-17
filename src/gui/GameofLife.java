@@ -81,12 +81,15 @@ public class GameofLife {
 		});
 	}
 
+    /**Updates the field**/
 	private void tick() {
         System.out.println("updating");
 		slices = slices.updateToCopy();
-        //handle peer junk
+        //handle peers
         if(p2p != null) {
-            p2p.sendSlices(slices); //loop the slices
+            p2p.sendSlices(slices); //wrap the slices
+
+            //handle slice wrapping input
             List<Slice> received = p2p.getReceived();
             if(received != null) {
                 for(Slice slice : received) {
@@ -99,6 +102,7 @@ public class GameofLife {
                 }
             }
         }
+
 		// Draw the slices for this field
 		for (int z = 0; z < EXTENT_WIDTH; z++) {
 			for (int y = 0; y < EXTENT_WIDTH; y++) {
@@ -114,7 +118,7 @@ public class GameofLife {
 							scene.addChild(cellGroup);
 						}
                         if(slices.isInternalSlice(z))
-                            ca.setColor(mapLifeToColor(slices.getCell(x,y,z)));
+                            ca.setColor(mapLifeToColor(slices.getCell(x,y,z))); //color depends on life duration
                         else
                             ca.setColor(new Color3f(0,1,0));
 					} else {

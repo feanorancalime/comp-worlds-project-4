@@ -9,6 +9,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+/**
+ * Peer modified from the P2P-Physics peer from class.
+ */
 public class Peer {
     /**
      * The default port number for incoming network connections.
@@ -432,10 +435,10 @@ public class Peer {
         return predecessor != null ? predecessor.chordID : -1;
     }
 
-    public boolean sendSlice(Slice o, PeerMessage.Position position, long chordID) {
+    public boolean sendSlice(Slice o, long chordID) {
         if (chordID < 0 || chordID >= ID_LIMIT)
             return false;
-        PeerMessage mesg = new PeerMessage(chordID, o, position);
+        PeerMessage mesg = new PeerMessage(chordID, o);
         return handlePayload(mesg);
     }
 
@@ -468,7 +471,9 @@ public class Peer {
     }
 
     public void sendSlices(Field slices) {
-        sendSlice(slices.getSlice(0), PeerMessage.Position.NEXT, getPredecessorID());
-        sendSlice(slices.getSlice(Field.SLICE_COUNT), PeerMessage.Position.PREVIOUS, getPredecessorID());
+        //pass backward
+        sendSlice(slices.getSlice(0), getPredecessorID());
+        //pass forward
+        sendSlice(slices.getSlice(Field.SLICE_COUNT), getPredecessorID());
     }
 }
