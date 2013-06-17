@@ -16,19 +16,7 @@ import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.swing.AbstractAction;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JSlider;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
@@ -77,7 +65,7 @@ public class GameofLife {
 
 	/**
 	 * Main method.
-	 * @param String args
+	 * @param  args
 	 */
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -298,7 +286,7 @@ public class GameofLife {
 	/**
 	 * Builds the new game menu.
 	 * @param label The label.
-	 * @param vkN The key mnemonic.
+	 * @param vkA The key mnemonic.
 	 * @return A JMenu.
 	 */
 	private JMenu buildChordMenu(String label, int vkA) {
@@ -386,8 +374,8 @@ public class GameofLife {
 		 */
 		@Override
 		public void actionPerformed(final ActionEvent event) {
-			JTextArea ipAddress = new JTextArea();
-			JTextArea chordId = new JTextArea();
+            JTextField ipAddress = new JTextField();
+            JTextField chordId = new JTextField();
 			
 			final JComponent[] inputs = new JComponent[] {
 					new JLabel("IP Address: "),
