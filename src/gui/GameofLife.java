@@ -1,13 +1,12 @@
 package gui;
-import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,14 +16,15 @@ import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.swing.AbstractAction;
-import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JPanel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.WindowConstants;
@@ -58,14 +58,13 @@ public class GameofLife {
 	// This instance's peer object.
 	private Peer p2p;
 	
-	// New game dialog.
-	private NewGameDialog newGameDialog;
-	
 	// UI frame.
 	private JFrame appFrame;
 
 	// Main scene object.
 	private BranchGroup scene;
+
+	private SimpleUniverse simpleU;
 
 	/**
 	 * Main method.
@@ -109,13 +108,12 @@ public class GameofLife {
 	private void createAndShowGUI() {
 		// Fix for background flickering on some platforms
 		System.setProperty("sun.awt.noerasebackground", "true");
-
-		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
-		final Canvas3D canvas3D = new Canvas3D(config);
-		SimpleUniverse simpleU = new SimpleUniverse(canvas3D);
-		simpleU.getViewingPlatform().setNominalViewingTransform();
-		simpleU.getViewer().getView().setSceneAntialiasingEnable(true);
-
+		
+//		final JCanvas3D jCanvas3d = new JCanvas3D();
+//		jCanvas3d.setPreferredSize(new Dimension(800,600));
+//		jCanvas3d.setSize(new Dimension(800,600));
+//		final Canvas3D canvas3D = jCanvas3d.getOffscreenCanvas3D();
+		
 		// Add a scaling transform that resizes the virtual world to fit
 		// within the standard view frustum.
 		BranchGroup trueScene = new BranchGroup();
@@ -128,7 +126,15 @@ public class GameofLife {
         scene.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
         scene.setCapability(BranchGroup.ALLOW_CHILDREN_READ);
 		scene.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+		scene.setCapability(BranchGroup.ALLOW_DETACH);
 		worldScaleTG.addChild(scene);
+		
+		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
+		final Canvas3D canvas3D = new Canvas3D(config);
+		simpleU = new SimpleUniverse(canvas3D);
+		simpleU.getViewingPlatform().setNominalViewingTransform();
+		simpleU.getViewer().getView().setSceneAntialiasingEnable(true);
+		simpleU.addBranchGraph(trueScene);
 		
 		// View movement
 		Point3d focus = new Point3d();
@@ -138,8 +144,10 @@ public class GameofLife {
         TransformGroup curTransform = new TransformGroup();
         FlyCam fc = new FlyCam(simpleU.getViewingPlatform().getViewPlatformTransform(),focus,camera,up,DISTANCE, lightTransform, curTransform);
         fc.setSchedulingBounds(new BoundingSphere(new Point3d(),1000.0));
-        scene.addChild(fc);
-        
+        BranchGroup fcGroup = new BranchGroup();
+        fcGroup.addChild(fc);
+        scene.addChild(fcGroup);
+		        
         // Map of cell objects
         cellMap = new HashMap<>();
 		for (int z = 0; z < EXTENT_WIDTH; z++) {
@@ -155,20 +163,20 @@ public class GameofLife {
 					// Added branchgroup to deal with exceptions
 					BranchGroup bg = new BranchGroup();
 					bg.addChild(cubeGroup);
+					bg.setCapability(BranchGroup.ALLOW_DETACH);
 					cellMap.put(new Vector3f(x, y, z), bg);
 				}
 			}
 		}
 		
 		slices = new Field();
-
-		simpleU.addBranchGraph(trueScene);
+		p2p = new Peer();
 
 		appFrame = new JFrame("Physics Demo");
 		appFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		appFrame.add(canvas3D);
-        canvas3D.setPreferredSize(new Dimension(800,600));
-        
+//        appFrame.add(jCanvas3d);
+        appFrame.add(canvas3D);
+		canvas3D.setPreferredSize(new Dimension(800,600));
         appFrame.setJMenuBar(buildMenuBar());
         
 		appFrame.pack();
@@ -178,7 +186,7 @@ public class GameofLife {
 		
 		new Timer(PAUSE_RATE, new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				canvas3D.stopRenderer();
+				canvas3D.startRenderer();
 				tick();
 				canvas3D.startRenderer();
 			}
@@ -192,6 +200,7 @@ public class GameofLife {
 		JSlider slider = new JSlider(min, max, value);
 		slider.setMinorTickSpacing(spacing);
 		slider.setPaintTicks(true);
+		slider.setPaintLabels(true);
 		return slider;
 	}
 
@@ -203,22 +212,39 @@ public class GameofLife {
 	private JMenuBar buildMenuBar() {
 		final JMenuBar menuBar = new JMenuBar();
 		// Build the menus
-		final JMenu chordMenu = buildChordMenu("Chord",
-				KeyEvent.VK_C);
+		final JMenu chordMenu = buildChordMenu("Chord", KeyEvent.VK_C);
+		final JMenu newGameMenu = buildNewGameMenu("New Game", KeyEvent.VK_N);
 		// Add the menus to the menu bar
-		final JMenu newGameMenu = buildNewGameMenu("New Game...", KeyEvent.VK_N);
 		menuBar.add(chordMenu);
 		menuBar.add(newGameMenu);
 		
 		return menuBar;
 	}
 
-	private JMenu buildNewGameMenu(String string, int vkN) {
-		return new JMenu(new NewGameAction(string));
+	/**
+	 * Builds the new game menu.
+	 * @param label The label.
+	 * @param vkN The key mnemonic.
+	 * @return A JMenu.
+	 */
+	private JMenu buildNewGameMenu(String label, int vkN) {
+		JMenu newGameMenu = new JMenu(label);
+		newGameMenu.add(new JMenuItem(
+				new NewGameAction("Settings...")));
+		return newGameMenu;
 	}
 
-	private JMenu buildChordMenu(String string, int vkA) {
-		return new JMenu(string);
+	/**
+	 * Builds the new game menu.
+	 * @param label The label.
+	 * @param vkN The key mnemonic.
+	 * @return A JMenu.
+	 */
+	private JMenu buildChordMenu(String label, int vkA) {
+		JMenu chordMenu = new JMenu(label);
+		chordMenu.add(new JMenuItem(
+				new PeerConnectAction("Connect...")));
+		return chordMenu;
 	}
 	
 	/**
@@ -239,103 +265,91 @@ public class GameofLife {
 		}
 		
 		/**
-		 * Adds a icosahedron to the scene.
+		 * Opens a new game dialog.
 		 * 
 		 * @param event
 		 *            The event which triggers the Action.
 		 */
 		@Override
 		public void actionPerformed(final ActionEvent event) {
-			if (newGameDialog == null) {
-				newGameDialog = new NewGameDialog(); 
+			JSlider sizeSlider;
+			JSlider timeSlider;
+			
+			sizeSlider = buildSlider(4, 32, 16, 2);
+			timeSlider = buildSlider(100, 1000, PAUSE_RATE, 100);
+			final JComponent[] inputs = new JComponent[] {
+					new JLabel("World Size: "),
+					sizeSlider,
+					new JLabel("Time Between Generations (ms): "),
+					timeSlider
+			};
+			int input = JOptionPane.showConfirmDialog(null, inputs, "Create New Game", JOptionPane.YES_NO_OPTION);
+			if (input == JOptionPane.YES_OPTION) {
+				EXTENT_WIDTH = sizeSlider.getValue();
+				PAUSE_RATE = timeSlider.getValue();
+				for (int z = 0; z < EXTENT_WIDTH; z++) {
+					for (int y = 0; y < EXTENT_WIDTH; y++) {
+						for (int x = 0; x < EXTENT_WIDTH; x++) {
+							Vector3f key = new Vector3f(x, y, z);
+							BranchGroup cellGroup = cellMap.get(key);
+								cellGroup.detach();
+							}
+						}
+					}
+				slices = new Field();
 			}
-			newGameDialog.showDialog(appFrame, "New Game");
 		}
 	}
-	
+	/**
+	 * Provides an action to add an icosahedron.
+	 */
 	@SuppressWarnings("serial")
-	class NewGameDialog extends JPanel {
-
-		// UI components.
-		private JSlider sizeSlider;
-		private JSlider timeSlider;
-		private JButton startGameButton;
-		private JButton cancelButton;
-		private JDialog dialog;
-		private boolean ok;
-
-		public NewGameDialog() {
-			JPanel optionsPanel = new JPanel();
-			optionsPanel.setLayout(new GridLayout(2, 2));
-			optionsPanel.add(new JLabel("World Size: "));
-			sizeSlider = buildSlider(4, 32, 16, 2);
-			optionsPanel.add(sizeSlider);
-			optionsPanel.add(new JLabel("Time Between Generations: "));
-			timeSlider = buildSlider(100, 1000, PAUSE_RATE, 100);
-			optionsPanel.add(timeSlider);
-			add(optionsPanel, BorderLayout.CENTER);
-			
-			startGameButton = new JButton("Create Game");
-			startGameButton.addActionListener(new ActionListener() {
-				
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					EXTENT_WIDTH = sizeSlider.getValue();
-					PAUSE_RATE = timeSlider.getValue();
-					slices = new Field();
-					ok = true;
-					dialog.setVisible(false);
-				}
-			});
-			
-			cancelButton = new JButton("Cancel");
-			cancelButton.addActionListener(new ActionListener() {
-				
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					dialog.setVisible(false);
-				}
-			});
-
-			JPanel buttonPanel = new JPanel();
-			buttonPanel.add(startGameButton);
-			buttonPanel.add(cancelButton);
-			add(buttonPanel, BorderLayout.SOUTH);
+	private class PeerConnectAction extends AbstractAction  {
+		
+		/**
+		 * Constructs an action for the menu.
+		 * 
+		 * @param actionName
+		 *            The name to be displayed on the menu.
+		 */
+		public PeerConnectAction(final String actionName) {
+			super(actionName);
+			putValue(NewGameAction.MNEMONIC_KEY, KeyEvent.VK_O);
 		}
 		
-		public boolean showDialog(Component parent, String title) {
-			ok = false;
-			Frame owner = null;
-			if (parent instanceof Frame) owner = (Frame) parent;
-			else owner = (Frame) SwingUtilities.getAncestorOfClass(Frame.class, parent);
-			if (dialog == null || dialog.getOwner() != owner) {
-				dialog = new JDialog(owner, true);
-				dialog.add(this);
-				dialog.getRootPane().setDefaultButton(cancelButton);
-				dialog.pack();
+		/**
+		 * Opens a connect dialog.
+		 * 
+		 * @param event
+		 *            The event which triggers the Action.
+		 */
+		@Override
+		public void actionPerformed(final ActionEvent event) {
+			JTextArea ipAddress = new JTextArea();
+			JTextArea chordId = new JTextArea();
+			
+			final JComponent[] inputs = new JComponent[] {
+					new JLabel("IP Address: "),
+					ipAddress,
+					new JLabel("Chord ID: "),
+					chordId
+			};
+			int input = JOptionPane.showConfirmDialog(null, inputs, "Connect to Peer", JOptionPane.YES_NO_OPTION);
+			if (input == JOptionPane.YES_OPTION) {
+				InetAddress host = null;
+				try {
+					host = InetAddress.getByName(ipAddress.getText());
+				} catch (UnknownHostException e) {
+					System.out.println("Unable to reach host " + ipAddress.getText() +
+							". Check that the hostname is correct and that the host is available.");
+					e.printStackTrace();
+				}
+				long id = Integer.parseInt(chordId.getText());
+				p2p.connectToNetwork(host, id);
 			}
-			dialog.setTitle(title);
-			dialog.setVisible(true);
-			return ok;
 		}
 	}
-//
-//	/**
-//	 * Build the "Remove Shape" menu.
-//	 * 
-//	 * @param label
-//	 *            The name displayed on the menu.
-//	 * @param mnemonic
-//	 *            The mnemonic key associated with this menu.
-//	 * @return A JMenu.
-//	 */
-//	private JMenu buildRemoveShapeMenu(final String label, final int mnemonic) {
-//		JMenu removeObjectMenu = new JMenu(label);
-//		removeObjectMenu.setMnemonic(mnemonic);
-//		removeObjectMenu.addMenuListener(new RemoveShapeMenuListener());
-//		return removeObjectMenu;
-//	}
-//
+
 //	/** Builds the control panel **/
 //	private final JPanel buildControlPanel() {
 //		// Basic panel setups
