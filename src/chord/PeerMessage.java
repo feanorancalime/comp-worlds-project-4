@@ -12,16 +12,11 @@ public class PeerMessage implements Serializable {
         NOTIFY, FIND_SUCCESSOR, SUCCESSOR, FIND_PREDECESSOR, PREDECESSOR, PAYLOAD
     }
 
-    public enum Position {
-        PREVIOUS, NEXT
-    }
-
     public Type type;
     public long nodeIdentifier;						// FIND_SUCCESSOR, PAYLOAD
     public int fingerTableIndex;					// FIND_SUCCESSOR, SUCCESSOR
     public PeerInformation peer;					// NOTIFY, FIND_SUCCESSOR, SUCCESSOR, FIND_PREDECESSOR, PREDECESSOR
     public Slice payload;					        // PAYLOAD
-    public Position position;					        // PAYLOAD
 
     public PeerMessage(PeerInformation origin, long nodeIdentifier, int fingerTableIndex) {
         type = Type.FIND_SUCCESSOR;
@@ -49,10 +44,9 @@ public class PeerMessage implements Serializable {
         }
     }
 
-    public PeerMessage(long nodeIdentifier, Slice payload, Position position) {
+    public PeerMessage(long nodeIdentifier, Slice payload) {
         type = Type.PAYLOAD;
         this.nodeIdentifier = nodeIdentifier;
         this.payload = payload;
-        this.position = position;
     }
 }
