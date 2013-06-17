@@ -1,5 +1,7 @@
 package model;
 
+import chord.Peer;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -67,7 +69,7 @@ public class Field {
     /**
      * Request any slices required to update the slices managed by this Field.
      */
-    public void requestRequiredSlices() {
+    public void requestRequiredSlices(Peer peer) {
         Set<Integer> required = new HashSet<Integer>();
         for(Integer slice_num : slices.keySet()) {
             required.add((slice_num+1)%SLICE_COUNT);            //add after
@@ -77,7 +79,7 @@ public class Field {
 
         for(Integer slice_num : required ) {
             if(!external_slices.containsKey(slice_num))
-                ;//TODO: request slice
+                peer.requestSlice(slice_num, slice_num, this.version, false); //request temporary slices
         }
     }
 

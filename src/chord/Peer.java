@@ -1,4 +1,6 @@
 package chord;
+import org.omg.PortableInterceptor.SUCCESSFUL;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -11,7 +13,7 @@ public class Peer {
 	/**
 	 * The size of the ID/key space in bits.
 	 */
-	public static final int ID_SPACE = 10;
+	public static final int ID_SPACE = 4;
 	/**
 	 * The largest valid ID/key + 1.
 	 */
@@ -110,6 +112,25 @@ public class Peer {
 			return false;
 		self.chordID = id;
 		startPeriodicThread();
+
+        //get the data I control
+        //request permanent control of data
+        if(self.chordID < successor.chordID) {
+            for(int i = (int)self.chordID; i < successor.chordID; i++) {
+                requestSlice(successor.chordID,i,-1,true);
+            }
+        } else { //self.chordID > successor.chordID
+            //id limit is also slice count
+            for(int i = (int)self.chordID; i < ID_LIMIT; i++) {
+                requestSlice(successor.chordID,i,-1,true);
+            }
+
+            for(int i = 0; i < successor.chordID; i++) {
+                requestSlice(successor.chordID,i,-1,true);
+            }
+        }
+
+
 		return true;
 	}
 
@@ -126,6 +147,13 @@ public class Peer {
 			periodicThread.interrupt();
 	}
 
+    /**
+     * Request slice data from another Node
+     * @param id The ID of the node. Usually slice_num
+     * @param slice_num The slice number you want.
+     * @param slice_version The slice version you want. -1 indicates latest.
+     * @param permanent Is this a permanent transfer, or just a request for data?
+     */
     public void requestSlice(long id, int slice_num, int slice_version, boolean permanent) {
         handleSliceRequest(new PeerMessage(self, id, slice_num, slice_version, permanent));
     }
@@ -142,6 +170,7 @@ public class Peer {
 
     private void handleSliceRequest(PeerMessage mesg) {
         try {
+            System.out.println("handleSliceRequest: @" + mesg.nodeIdentifier + " for slice " + mesg.slice_num);
             if (mesg.nodeIdentifier == -1) {
                 sendSlice(mesg);
             } else if (withinClosedInterval(mesg.nodeIdentifier, self.chordID, successor.chordID)) {
@@ -205,6 +234,9 @@ public class Peer {
 				if (mesg.peer.networkID == null)
 					mesg.peer.networkID = socket.getInetAddress();
 			}
+
+            System.out.println("Process Connection: " + mesg.type.toString());
+
 			switch (mesg.type) {
 			case NOTIFY:
 				if (predecessor == null || withinOpenInterval(mesg.peer.chordID, predecessor.chordID, self.chordID)) {
