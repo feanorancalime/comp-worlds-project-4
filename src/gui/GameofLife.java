@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.media.j3d.Appearance;
@@ -29,6 +30,7 @@ import chord.Peer;
 
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import model.Slice;
 
 public class GameofLife {
 	
@@ -82,6 +84,21 @@ public class GameofLife {
 	private void tick() {
         System.out.println("updating");
 		slices = slices.updateToCopy();
+        //handle peer junk
+        if(p2p != null) {
+            p2p.sendSlices(slices); //loop the slices
+            List<Slice> received = p2p.getReceived();
+            if(received != null) {
+                for(Slice slice : received) {
+                    //next
+                    if(slice.getNumber() == 0) {
+                        slices.setNext(slice);
+                    } else { //prev
+                        slices.setPrev(slice);
+                    }
+                }
+            }
+        }
 		// Draw the slices for this field
 		for (int z = 0; z < EXTENT_WIDTH; z++) {
 			for (int y = 0; y < EXTENT_WIDTH; y++) {
@@ -98,8 +115,6 @@ public class GameofLife {
 						}
                         if(slices.isInternalSlice(z))
                             ca.setColor(mapLifeToColor(slices.getCell(x,y,z)));
-                        else if(slices.isExternalSlice(z))
-                            ca.setColor(mapOutsourcedLifeToColor(slices.getCell(x, y, z)));
                         else
                             ca.setColor(new Color3f(0,1,0));
 					} else {
@@ -354,6 +369,9 @@ public class GameofLife {
 							}
 						}
 					}
+                Field temp = new Field();
+                temp.setNext(slices.getNext());
+                temp.setPrev(slices.getPrev());
 				slices = new Field();
 			}
 		}
