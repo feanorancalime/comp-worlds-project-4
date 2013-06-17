@@ -5,9 +5,6 @@ import model.Slice;
 
 import java.io.Serializable;
 
-/**
- * Modified from the PeerMessage from class.
- */
 public class PeerMessage implements Serializable {
     private static final long serialVersionUID = -8361483433000719806L;
 
@@ -15,11 +12,16 @@ public class PeerMessage implements Serializable {
         NOTIFY, FIND_SUCCESSOR, SUCCESSOR, FIND_PREDECESSOR, PREDECESSOR, PAYLOAD
     }
 
+    public enum Position {
+        PREVIOUS, NEXT
+    }
+
     public Type type;
     public long nodeIdentifier;						// FIND_SUCCESSOR, PAYLOAD
     public int fingerTableIndex;					// FIND_SUCCESSOR, SUCCESSOR
     public PeerInformation peer;					// NOTIFY, FIND_SUCCESSOR, SUCCESSOR, FIND_PREDECESSOR, PREDECESSOR
     public Slice payload;					        // PAYLOAD
+    public Position position;					        // PAYLOAD
 
     public PeerMessage(PeerInformation origin, long nodeIdentifier, int fingerTableIndex) {
         type = Type.FIND_SUCCESSOR;
@@ -47,9 +49,10 @@ public class PeerMessage implements Serializable {
         }
     }
 
-    public PeerMessage(long nodeIdentifier, Slice payload) {
+    public PeerMessage(long nodeIdentifier, Slice payload, Position position) {
         type = Type.PAYLOAD;
         this.nodeIdentifier = nodeIdentifier;
         this.payload = payload;
+        this.position = position;
     }
 }
