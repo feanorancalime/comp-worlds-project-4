@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -345,8 +346,21 @@ public class GameofLife {
 			JSlider timeSlider;
 			
 			timeSlider = buildSlider(100, 1000, PAUSE_RATE, 100);
+			@SuppressWarnings("rawtypes")
+			Hashtable<Integer, JLabel> labels = new Hashtable<>();
+			labels.put(new Integer(100), new JLabel(".1"));
+			labels.put(new Integer(200), new JLabel(".2"));
+			labels.put(new Integer(300), new JLabel(".3"));
+			labels.put(new Integer(400), new JLabel(".4"));
+			labels.put(new Integer(500), new JLabel(".5"));
+			labels.put(new Integer(600), new JLabel(".6"));
+			labels.put(new Integer(700), new JLabel(".7"));
+			labels.put(new Integer(800), new JLabel(".8"));
+			labels.put(new Integer(900), new JLabel(".9"));
+			labels.put(new Integer(1000), new JLabel("1"));
+			timeSlider.setLabelTable(labels);
 			final JComponent[] inputs = new JComponent[] {
-					new JLabel("Time Between Generations (ms): "),
+					new JLabel("Time Between Generations (s): "),
 					timeSlider
 			};
 			int input = JOptionPane.showConfirmDialog(null, inputs, "Create New Game", JOptionPane.YES_NO_OPTION);
