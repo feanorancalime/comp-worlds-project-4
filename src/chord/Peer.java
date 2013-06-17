@@ -126,9 +126,34 @@ public class Peer {
 			periodicThread.interrupt();
 	}
 
-	public void sendText(String text, long id) {
-		handleText(new PeerMessage(id, text));
-	}
+    public void requestSlice(long id, int slice_num, int slice_version, boolean permanent) {
+        handleSliceRequest(new PeerMessage(self, id, slice_num, slice_version, permanent));
+    }
+
+    public void sendSlice(PeerMessage mesg) {
+        System.out.println("request from " + mesg.peer.chordID + " : " + mesg.slice_num + " ver " + mesg.slice_version);
+        //handleSliceRequest(new PeerMessage(self, id, slice_num, slice_version, permanent));
+        //TODO: SEND REPLY
+    }
+
+    public void receiveSlice(PeerMessage message) {
+        //handleSliceRequest(new PeerMessage(id, text));
+    }
+
+    private void handleSliceRequest(PeerMessage mesg) {
+        try {
+            if (mesg.nodeIdentifier == -1) {
+                sendSlice(mesg);
+            } else if (withinClosedInterval(mesg.nodeIdentifier, self.chordID, successor.chordID)) {
+                mesg.nodeIdentifier = -1;
+                sendMessage(mesg, successor);
+            } else {
+                PeerInformation n0 = closestPrecedingNode(mesg.nodeIdentifier);
+                sendMessage(mesg, n0);
+            }
+        } catch (IOException e) {
+        }
+    }
 
 	private boolean startServer() {
 		return startServer(DEFAULT_SERVER_PORT);
@@ -211,9 +236,12 @@ public class Peer {
 				}
 				returnMesg = new PeerMessage(PeerMessage.Type.NOTIFY, self);
 				sendMessage(returnMesg, successor);
-				break;
-			case TEXT:
-				handleText(mesg);
+                break;
+            case GET_SLICE:
+                handleSliceRequest(mesg);
+                break;
+            case SEND_SLICE:
+                ;//handleSliceRequest(mesg);
 			}
 		} catch (IOException e) {
 			// We expect the deserialization to fail, throwing EOFException, when a "check predecessor" connection is made
@@ -253,21 +281,6 @@ public class Peer {
 
 	private boolean withinClosedInterval(long a, long b, long c) {
 		return b == c || withinOpenInterval(a, b, c + 1);
-	}
-
-	private void handleText(PeerMessage mesg) {
-		try {
-			if (mesg.nodeIdentifier == -1)
-				System.out.println(mesg.text);
-			else if (withinClosedInterval(mesg.nodeIdentifier, self.chordID, successor.chordID)) {
-				mesg.nodeIdentifier = -1;
-				sendMessage(mesg, successor);
-			} else {
-				PeerInformation n0 = closestPrecedingNode(mesg.nodeIdentifier);
-				sendMessage(mesg, n0);
-			}
-		} catch (IOException e) {
-		}
 	}
 	
 	private void sendMessage(PeerMessage mesg, PeerInformation destination) throws IOException {
@@ -457,7 +470,7 @@ public class Peer {
 					continue;
 				}
 				sc.skip(sc.delimiter());
-				peer.sendText(sc.nextLine(), id);
+				//peer.sendText(sc.nextLine(), id);
 			} catch (IOException e) {
 			}
 		}

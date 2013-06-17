@@ -141,4 +141,14 @@ public class Slice {
 
         return adjacent;
     }
+
+    /**The number of the slice**/
+    public int getNumber() {
+        return number;
+    }
+
+    /** The version of the slice**/
+    public int getVersion() {
+        return version;
+    }
 }
